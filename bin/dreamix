@@ -1,0 +1,490 @@
+#!/usr/bin/env node
+
+/**
+ * Module dependencies.
+ */
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const util = require('util');
+const cliff = require('cliff');
+const mkdirp = require('mkdirp');
+const co = require('../lib/modules/console');
+const utils = require('../lib/util/utils');
+const starter = require('../lib/master/starter');
+const exec = require('child_process').exec;
+const spawn = require('child_process').spawn;
+const version = require('../package.json').version;
+const adminClient = require('dreamix-admin').adminClient;
+const constants = require('../lib/util/constants');
+const program = require('commander');
+
+/**
+ *  Constant Variables
+ */
+const TIME_INIT = 1000;
+const TIME_KILL_WAIT = 5 * 1000;
+const KILL_CMD_LUX = 'kill -9 `ps -ef|grep node|awk \'{print $2}\'`';
+const KILL_CMD_WIN = 'taskkill /im node.exe /f';
+
+const CUR_DIR = process.cwd();
+const DEFAULT_GAME_SERVER_DIR = CUR_DIR;
+const DEFAULT_USERNAME = 'admin';
+const DEFAULT_PWD = 'admin';
+const DEFAULT_ENV = 'development';
+const DEFAULT_MASTER_HOST = '127.0.0.1';
+const DEFAULT_MASTER_PORT = 3005;
+
+const CONNECT_ERROR = 'Fail to connect to admin console server.';
+const FILEREAD_ERROR = 'Fail to read the file, please check if the application is started legally.';
+const CLOSEAPP_INFO = 'Closing the application......\nPlease wait......';
+const ADD_SERVER_INFO = 'Successfully add server.';
+const RESTART_SERVER_INFO = 'Successfully restart server.';
+const INIT_PROJ_NOTICE = `\nThe default admin user is: \n\n${'  username'.green}: admin\n  ${'password'.green}: admin\n\nYou can configure admin users by editing adminUser.json later.\n `;
+const SCRIPT_NOT_FOUND = 'Fail to find an appropriate script to run,\nplease check the current work directory or the directory specified by option `--directory`.\n'.red;
+const MASTER_HA_NOT_FOUND = 'Fail to find an appropriate masterha config file, \nplease check the current work directory or the arguments passed to.\n'.red;
+const COMMAND_ERROR = 'Illegal command format. Use `pomelo --help` to get more info.\n'.red;
+const DAEMON_INFO = 'The application is running in the background now.\n';
+
+program.version(version);
+
+program.command('start')
+    .description('start the application')
+    .option('-e, --env <env>', 'the used environment', DEFAULT_ENV)
+    .option('-D, --daemon', 'enable the daemon start')
+    .option('-d, --directory, <directory>', 'the code directory', DEFAULT_GAME_SERVER_DIR)
+    .option('-t, --type <server-type>,', 'start server type')
+    .option('-i, --id <server-id>', 'start server id')
+    .action((opts) => {
+        start(opts);
+    });
+
+program.command('list')
+    .description('list the servers')
+    .option('-u, --username <username>', 'administration user name', DEFAULT_USERNAME)
+    .option('-p, --password <password>', 'administration password', DEFAULT_PWD)
+    .option('-h, --host <master-host>', 'master server host', DEFAULT_MASTER_HOST)
+    .option('-P, --port <master-port>', 'master server port', DEFAULT_MASTER_PORT)
+    .action((opts) => {
+        list(opts);
+    });
+
+program.command('add')
+    .description('add a new server')
+    .option('-u, --username <username>', 'administration user name', DEFAULT_USERNAME)
+    .option('-p, --password <password>', 'administration password', DEFAULT_PWD)
+    .option('-h, --host <master-host>', 'master server host', DEFAULT_MASTER_HOST)
+    .option('-P, --port <master-port>', 'master server port', DEFAULT_MASTER_PORT)
+    .action(function () {
+        const args = [].slice.call(arguments, 0);
+        const opts = args[args.length - 1];
+        opts.args = args.slice(0, -1);
+        add(opts);
+    });
+
+program.command('stop')
+    .description('stop the servers, for multiple servers, use `pomelo stop server-id-1 server-id-2`')
+    .option('-u, --username <username>', 'administration user name', DEFAULT_USERNAME)
+    .option('-p, --password <password>', 'administration password', DEFAULT_PWD)
+    .option('-h, --host <master-host>', 'master server host', DEFAULT_MASTER_HOST)
+    .option('-P, --port <master-port>', 'master server port', DEFAULT_MASTER_PORT)
+    .action(function () {
+        const args = [].slice.call(arguments, 0);
+        const opts = args[args.length - 1];
+        opts.serverIds = args.slice(0, -1);
+        terminal('stop', opts);
+    });
+
+program.command('kill')
+    .description('kill the application')
+    .option('-u, --username <username>', 'administration user name', DEFAULT_USERNAME)
+    .option('-p, --password <password>', 'administration password', DEFAULT_PWD)
+    .option('-h, --host <master-host>', 'master server host', DEFAULT_MASTER_HOST)
+    .option('-P, --port <master-port>', 'master server port', DEFAULT_MASTER_PORT)
+    .option('-f, --force', 'using this option would kill all the node processes')
+    .action(function () {
+        const args = [].slice.call(arguments, 0);
+        const opts = args[args.length - 1];
+        opts.serverIds = args.slice(0, -1);
+        terminal('kill', opts);
+    });
+
+program.command('restart')
+    .description('restart the servers, for multiple servers, use `pomelo restart server-id-1 server-id-2`')
+    .option('-u, --username <username>', 'administration user name', DEFAULT_USERNAME)
+    .option('-p, --password <password>', 'administration password', DEFAULT_PWD)
+    .option('-h, --host <master-host>', 'master server host', DEFAULT_MASTER_HOST)
+    .option('-P, --port <master-port>', 'master server port', DEFAULT_MASTER_PORT)
+    .option('-t, --type <server-type>,', 'start server type')
+    .option('-i, --id <server-id>', 'start server id')
+    .action((opts) => {
+        restart(opts);
+    });
+
+program.command('masterha')
+    .description('start all the slaves of the master')
+    .option('-d, --directory <directory>', 'the code directory', DEFAULT_GAME_SERVER_DIR)
+    .action((opts) => {
+        startMasterha(opts);
+    });
+
+program.command('*')
+    .action(() => {
+        console.log(COMMAND_ERROR);
+    });
+
+program.parse(process.argv);
+
+
+/**
+ * Start application.
+ *
+ * @param {Object} opts options for `start` operation
+ */
+function start(opts) {
+    const absScript = path.resolve(opts.directory, 'app.js');
+    if (!fs.existsSync(absScript)) {
+        abort(SCRIPT_NOT_FOUND);
+    }
+
+    const logDir = path.resolve(opts.directory, 'logs');
+    if (!fs.existsSync(logDir)) {
+        fs.mkdir(logDir);
+    }
+
+    let ls;
+    const type = opts.type || constants.RESERVED.ALL;
+    const params = [absScript, `env=${opts.env}`, `type=${type}`];
+    if (opts.id) {
+        params.push(`startId=${opts.id}`);
+    }
+    if (opts.daemon) {
+        ls = spawn(process.execPath, params, { detached: true, stdio: 'ignore' });
+        ls.unref();
+        console.log(DAEMON_INFO);
+        process.exit(0);
+    } else {
+        ls = spawn(process.execPath, params);
+        ls.stdout.on('data', (data) => {
+            console.log(data.toString());
+        });
+        ls.stderr.on('data', (data) => {
+            console.log(data.toString());
+        });
+    }
+}
+
+/**
+ * List pomelo processes.
+ *
+ * @param {Object} opts options for `list` operation
+ */
+function list(opts) {
+    const id = `dreamix_list_${Date.now()}`;
+    connectToMaster(id, opts, (client) => {
+        client.request(co.moduleId, { signal: 'list' }, (err, data) => {
+            if (err) {
+                console.error(err);
+            }
+            const servers = [];
+            for (const key in data.msg) {
+                if (data.msg.hasOwnProperty(key)) {
+                    servers.push(data.msg[key]);
+                }
+            }
+            const comparer = function (a, b) {
+                if (a.serverType < b.serverType) {
+                    return -1;
+                } else if (a.serverType > b.serverType) {
+                    return 1;
+                } else if (a.serverId < b.serverId) {
+                    return -1;
+                } else if (a.serverId > b.serverId) {
+                    return 1;
+                }
+                return 0;
+            };
+            servers.sort(comparer);
+            const rows = [];
+            rows.push(['serverId', 'serverType', 'pid', 'rss(M)', 'heapTotal(M)', 'heapUsed(M)', 'uptime(m)']);
+            servers.forEach((server) => {
+                rows.push([server.serverId, server.serverType, server.pid, server.rss, server.heapTotal, server.heapUsed, server.uptime]);
+            });
+            console.log(cliff.stringifyRows(rows, ['red', 'blue', 'green', 'cyan', 'magenta', 'white', 'yellow']));
+            process.exit(0);
+        });
+    });
+}
+
+/**
+ * Add server to application.
+ *
+ * @param {Object} opts options for `add` operation
+ */
+function add(opts) {
+    const id = `dreamix_add_${Date.now()}`;
+    connectToMaster(id, opts, (client) => {
+        client.request(co.moduleId, { signal: 'add', args: opts.args }, (err) => {
+            if (err) {
+                console.error(err);
+            } else {
+                console.info(ADD_SERVER_INFO);
+            }
+            process.exit(0);
+        });
+    });
+}
+
+/**
+ * Terminal application.
+ *
+ * @param {String} signal stop/kill
+ * @param {Object} opts options for `stop/kill` operation
+ */
+function terminal(signal, opts) {
+    console.info(CLOSEAPP_INFO);
+    // option force just for `kill`
+    if (opts.force) {
+        if (os.platform() === constants.PLATFORM.WIN) {
+            exec(KILL_CMD_WIN);
+        } else {
+            exec(KILL_CMD_LUX);
+        }
+        process.exit(1);
+        return;
+    }
+    const id = `dreamix_terminal_${Date.now()}`;
+    connectToMaster(id, opts, (client) => {
+        client.request(co.moduleId, {
+            signal: signal, ids: opts.serverIds
+        }, (err, msg) => {
+            if (err) {
+                console.error(err);
+            }
+            if (signal === 'kill') {
+                if (msg.code === 'ok') {
+                    console.log('All the servers have been terminated!');
+                } else {
+                    console.log('There may be some servers remained:', msg.serverIds);
+                }
+            }
+            process.exit(0);
+        });
+    });
+}
+
+function restart(opts) {
+    const id = `dreamix_restart_${Date.now()}`;
+    const serverIds = [];
+    let type = null;
+    if (opts.id) {
+        serverIds.push(opts.id);
+    }
+    if (opts.type) {
+        type = opts.type;
+    }
+    connectToMaster(id, opts, (client) => {
+        client.request(co.moduleId, { signal: 'restart', ids: serverIds, type: type }, (err, fails) => {
+            if (err) {
+                console.error(err);
+            } else if (fails.length) {
+                console.info('restart fails server ids: %j', fails);
+            } else {
+                console.info(RESTART_SERVER_INFO);
+            }
+            process.exit(0);
+        });
+    });
+}
+
+function connectToMaster(id, opts, cb) {
+    const client = new adminClient({ username: opts.username, password: opts.password, md5: true });
+    client.connect(id, opts.host, opts.port, (err) => {
+        if (err) {
+            abort(CONNECT_ERROR + err.red);
+        }
+        if (typeof cb === 'function') {
+            cb(client);
+        }
+    });
+}
+
+/**
+ * Start master slaves.
+ *
+ * @param {String} opts for `startMasterha` operation
+ */
+function startMasterha(opts) {
+    const configFile = path.join(opts.directory, constants.FILEPATH.MASTER_HA);
+    if (!fs.existsSync(configFile)) {
+        abort(MASTER_HA_NOT_FOUND);
+    }
+    const masterha = require(configFile).masterha;
+    for (let i = 0; i < masterha.length; i++) {
+        const server = masterha[i];
+        server.mode = constants.RESERVED.STAND_ALONE;
+        server.masterha = 'true';
+        server.home = opts.directory;
+        runServer(server);
+    }
+}
+
+/**
+ * Check if the given directory `path` is empty.
+ *
+ * @param {String} path
+ * @param {Function} fn
+ */
+function emptyDirectory(path, fn) {
+    fs.readdir(path, (err, files) => {
+        if (err && err.code !== 'ENOENT') {
+            abort(FILEREAD_ERROR);
+        }
+        fn(!files || !files.length);
+    });
+}
+
+/**
+ * Prompt confirmation with the given `msg`.
+ *
+ * @param {String} msg
+ * @param {Function} fn
+ */
+function confirm(msg, fn) {
+    prompt(msg, (val) => {
+        fn(/^ *y(es)?/i.test(val));
+    });
+}
+
+/**
+ * Prompt input with the given `msg` and callback `fn`.
+ *
+ * @param {String} msg
+ * @param {Function} fn
+ */
+function prompt(msg, fn) {
+    if (msg[msg.length - 1] === ' ') {
+        process.stdout.write(msg);
+    } else {
+        console.log(msg);
+    }
+    process.stdin.setEncoding('ascii');
+    process.stdin.once('data', (data) => {
+        fn(data);
+    }).resume();
+}
+
+/**
+ * Exit with the given `str`.
+ *
+ * @param {String} str
+ */
+function abort(str) {
+    console.error(str);
+    process.exit(1);
+}
+
+/**
+ * Copy template files to project.
+ *
+ * @param {String} origin
+ * @param {String} target
+ */
+function copy(origin, target) {
+    if (!fs.existsSync(origin)) {
+        abort(`${origin}does not exist.`);
+    }
+    if (!fs.existsSync(target)) {
+        mkdir(target);
+        console.log('   create : '.green + target);
+    }
+    fs.readdir(origin, (err, datalist) => {
+        if (err) {
+            abort(FILEREAD_ERROR);
+        }
+        for (let i = 0; i < datalist.length; i++) {
+            const oCurrent = path.resolve(origin, datalist[i]);
+            const tCurrent = path.resolve(target, datalist[i]);
+            if (fs.statSync(oCurrent).isFile()) {
+                fs.writeFileSync(tCurrent, fs.readFileSync(oCurrent, ''), '');
+                console.log('   create : '.green + tCurrent);
+            } else if (fs.statSync(oCurrent).isDirectory()) {
+                copy(oCurrent, tCurrent);
+            }
+        }
+    });
+}
+
+/**
+ * Mkdir -p.
+ *
+ * @param {String} _path
+ * @param {Function} fn
+ */
+function mkdir(_path, fn) {
+    mkdirp(_path, {mode: 755}, function (err) {  // eslint-disable-line
+        if (err) {
+            throw err;
+        }
+        console.log('   create : '.green + _path);
+        if (typeof fn === 'function') {
+            fn();
+        }
+    });
+}
+
+/**
+ * Get user's choice on connector selecting
+ *
+ * @param {Function} cb
+ */
+function connectorType(cb) {
+    prompt('Please select underly connector, 1 for websocket(native socket), 2 for socket.io, 3 for wss, 4 for socket.io(wss), 5 for udp, 6 for mqtt: [1]', (msg) => {
+        switch (msg.trim()) {
+        case '':
+            cb(1);
+            break;
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+            cb(msg.trim());
+            break;
+        default:
+            console.log(`${'Invalid choice! Please input 1 - 5.'.red}\n`);
+            connectorType(cb);
+            break;
+        }
+    });
+}
+
+/**
+ * Run server.
+ *
+ * @param {Object} server server information
+ */
+function runServer(server) {
+    let cmd;
+    const main = path.resolve(server.home, 'app.js');
+    if (utils.isLocal(server.host)) {
+        const options = [];
+        options.push(main);
+        for (const key in server) {
+            if (server.hasOwnProperty(key)) {
+                options.push(util.format('%s=%s', key, server[key]));
+            }
+        }
+        starter.localrun(process.execPath, null, options);
+    } else {
+        cmd = util.format('cd "%s" && "%s"', server.home, process.execPath);
+        cmd += util.format(' "%s" ', main);
+        for (const key in server) {
+            if (server.hasOwnProperty(key)) {
+                cmd += util.format(' %s=%s ', key, server[key]);
+            }
+        }
+        starter.sshrun(cmd, server.host);
+    }
+}
