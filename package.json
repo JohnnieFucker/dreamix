@@ -3,9 +3,6 @@
   "version": "1.0.1",
   "description": "dreamix",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/JohnnieFucker/dreamix.git"
@@ -24,10 +21,12 @@
     "cliff": "^0.1.10",
     "commander": "^2.11.0",
     "crc": "^3.5.0",
-    "dreamix-admin": "^1.0.1",
+    "debug-trace": "^2.2.1",
+    "dreamix-admin": "^1.0.7",
     "dreamix-loader": "^1.0.0",
     "dreamix-logger": "^1.0.0",
-    "dreamix-rpc": "^1.0.0",
+    "dreamix-protobuf": "^1.0.0",
+    "dreamix-rpc": "^1.0.1",
     "dreamix-scheduler": "^1.0.0",
     "mkdirp": "^0.5.1",
     "mqtt": "^2.14.0",
