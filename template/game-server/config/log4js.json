@@ -1,0 +1,244 @@
+{
+  "appenders": {
+    "console": {
+      "type": "console"
+    },
+    "con-log": {
+      "type": "console",
+      "filename": "${opts:base}/logs/con-log-${opts:serverId}.log",
+      "pattern": "connector",
+      "maxLogSize": 1048576,
+      "layout": {
+        "type": "coloured"
+      },
+      "backups": 5
+    },
+    "rpc-log": {
+      "type": "console",
+      "filename": "${opts:base}/logs/rpc-log-${opts:serverId}.log",
+      "maxLogSize": 1048576,
+      "layout": {
+        "type": "coloured"
+      },
+      "backups": 5
+    },
+    "forward-log": {
+      "type": "console",
+      "filename": "${opts:base}/logs/forward-log-${opts:serverId}.log",
+      "maxLogSize": 1048576,
+      "layout": {
+        "type": "coloured"
+      },
+      "backups": 5
+    },
+    "rpc-debug": {
+      "type": "console",
+      "filename": "${opts:base}/logs/rpc-debug-${opts:serverId}.log",
+      "maxLogSize": 1048576,
+      "layout": {
+        "type": "coloured"
+      },
+      "backups": 1
+    },
+    "crash-log": {
+      "type": "console",
+      "filename": "${opts:base}/logs/crash.log",
+      "maxLogSize": 1048576,
+      "layout": {
+        "type": "coloured"
+      },
+      "backups": 1
+    },
+    "admin-log": {
+      "type": "console",
+      "filename": "${opts:base}/logs/admin.log",
+      "maxLogSize": 1048576,
+      "layout": {
+        "type": "coloured"
+      },
+      "backups": 1
+    },
+    "dreamix": {
+      "type": "console",
+      "filename": "${opts:base}/logs/dreamix.log",
+      "maxLogSize": 1048576,
+      "layout": {
+        "type": "coloured"
+      },
+      "backups": 5
+    },
+    "dreamix-admin": {
+      "type": "console",
+      "filename": "${opts:base}/logs/dreamix-admin.log",
+      "maxLogSize": 1048576,
+      "layout": {
+        "type": "coloured"
+      },
+      "backups": 5
+    },
+    "dreamix-rpc": {
+      "type": "console",
+      "filename": "${opts:base}/logs/dreamix-rpc.log",
+      "maxLogSize": 1048576,
+      "layout": {
+        "type": "coloured"
+      },
+      "backups": 5
+    },
+    "dreamix-biz": {
+      "type": "console",
+      "filename": "${opts:base}/logs/dreamix-biz.log",
+      "maxLogSize": 1048576,
+      "layout": {
+        "type": "coloured"
+      },
+      "backups": 5
+    },
+    "dreamix-only": {
+      "type": "console",
+      "filename": "${opts:base}/logs/dreamix-only.log",
+      "maxLogSize": 1048576,
+      "layout": {
+        "type": "coloured"
+      },
+      "backups": 1
+    },
+    "chathandler": {
+      "type": "console",
+      "filename": "${opts:base}/logs/chathandler.log",
+      "maxLogSize": 1048576,
+      "layout": {
+        "type": "coloured"
+      },
+      "backups": 5
+    },
+    "wechat": {
+      "type": "console",
+      "filename": "${opts:base}/logs/chathandler.log",
+      "maxLogSize": 1048576,
+      "layout": {
+        "type": "coloured"
+      },
+      "backups": 5
+    },
+    "db": {
+      "type": "console",
+      "filename": "${opts:base}/logs/chathandler.log",
+      "maxLogSize": 1048576,
+      "layout": {
+        "type": "coloured"
+      },
+      "backups": 5
+    },
+    "db_mysql_data": {
+      "type": "console",
+      "filename": "${opts:base}/logs/db_mysql_data.log",
+      "maxLogSize": 1048576,
+      "layout": {
+        "type": "coloured"
+      },
+      "backups": 5
+    }
+  },
+  "categories": {
+    "default": {
+      "appenders": [
+        "console"
+      ],
+      "level": "debug"
+    },
+    "con-log": {
+      "appenders": [
+        "con-log"
+      ],
+      "level": "debug"
+    },
+    "rpc-log": {
+      "appenders": [
+        "rpc-log"
+      ],
+      "level": "debug"
+    },
+    "forward-log": {
+      "appenders": [
+        "forward-log"
+      ],
+      "level": "debug"
+    },
+    "rpc-debug": {
+      "appenders": [
+        "rpc-debug"
+      ],
+      "level": "debug"
+    },
+    "crash-log": {
+      "appenders": [
+        "crash-log"
+      ],
+      "level": "debug"
+    },
+    "admin-log": {
+      "appenders": [
+        "admin-log"
+      ],
+      "level": "debug"
+    },
+    "dreamix": {
+      "appenders": [
+        "dreamix"
+      ],
+      "level": "debug"
+    },
+    "dreamix-admin": {
+      "appenders": [
+        "dreamix-admin"
+      ],
+      "level": "debug"
+    },
+    "dreamix-rpc": {
+      "appenders": [
+        "dreamix-rpc"
+      ],
+      "level": "debug"
+    },
+    "dreamix-biz": {
+      "appenders": [
+        "dreamix-biz"
+      ],
+      "level": "debug"
+    },
+    "dreamix-only": {
+      "appenders": [
+        "dreamix-only"
+      ],
+      "level": "debug"
+    },
+    "chathandler": {
+      "appenders": [
+        "chathandler"
+      ],
+      "level": "debug"
+    },
+    "wechat": {
+      "appenders": [
+        "wechat"
+      ],
+      "level": "debug"
+    },
+    "db": {
+      "appenders": [
+        "db"
+      ],
+      "level": "debug"
+    },
+    "db_mysql_data": {
+      "appenders": [
+        "db_mysql_data"
+      ],
+      "level": "debug"
+    }
+  },
+  "replaceConsole": true,
+  "rawMessage": false,
+  "lineDebug": true
+}
