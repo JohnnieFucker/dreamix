@@ -21,6 +21,10 @@ app.configure('all', 'connector', () => {
         });
     app.filter(dreamix.timeout());
 });
+
+// 开启监控访问
+app.enable('systemMonitor');
+
 // start app
 app.start(() => {
     console.log('【启动完成】');

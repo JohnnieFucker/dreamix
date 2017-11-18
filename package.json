@@ -21,7 +21,7 @@
     "cliff": "^0.1.10",
     "commander": "^2.11.0",
     "crc": "^3.5.0",
-    "dreamix-admin": "^1.0.7",
+    "dreamix-admin": "^1.0.8",
     "dreamix-loader": "^1.0.0",
     "dreamix-logger": "^1.0.0",
     "dreamix-protobuf": "^1.0.0",
@@ -30,7 +30,7 @@
     "mkdirp": "^0.5.1",
     "mqtt": "^2.14.0",
     "node-bignumber": "^v1.2.1",
-    "pomelo-protocol": "^0.1.6",
+    "dreamix-protocol": "^1.0.0",
     "seq-queue": "^0.0.5",
     "socket.io": "^2.0.4",
     "ws": "^3.3.1"

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>
+        dreamix
+    </title>
+    <meta http-equiv="content-type" content="text/html;charset=utf-8"/>
+    <script src="js/lib/socket.io.js">
+    </script>
+    <script src="js/lib/dreamixclient.js">
+    </script>
+    <script type="text/javascript">
+        var dreamix = window.dreamix;
+        var host = "127.0.0.1";
+        var port = "3010";
+
+        function show() {
+            dreamix.init({
+                host: host,
+                port: port,
+                log: true
+            }, function () {
+                dreamix.request("connector.entryHandler.entry", {
+                    id: 123,
+                    body: 'hello dreamix'
+                }, function (data) {
+                    alert(data.body);
+                });
+            });
+        }
+    </script>
+
+</head>
+<body>
+<input id="test" type="button" value="Test Game Server" onclick="show()"/>
+</body>
+</html>

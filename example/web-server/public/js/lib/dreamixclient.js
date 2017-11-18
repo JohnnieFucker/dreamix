@@ -317,13 +317,13 @@
     }
 
     var root = window;
-    var pomelo = Object.create(EventEmitter.prototype); // object extend from object
-    root.pomelo = pomelo;
+    var dreamix = Object.create(EventEmitter.prototype); // object extend from object
+    root.dreamix = dreamix;
     var socket = null;
     var callbacks = {};
 
-    pomelo.init = function (params, cb) {
-        pomelo.params = params;
+    dreamix.init = function (params, cb) {
+        dreamix.params = params;
         params.debug = true;
         var host = params.host;
         var port = params.port;
@@ -350,29 +350,30 @@
                 data = JSON.parse(data);
             }
             if (data instanceof Array) {
-                processMessageBatch(pomelo, data);
+                processMessageBatch(dreamix, data);
             } else {
-                processMessage(pomelo, data);
+                processMessage(dreamix, data);
             }
         });
 
         socket.on('error', function (err) {
             console.log(err);
+            dreamix.emit('error');
         });
 
         socket.on('disconnect', function (reason) {
-            pomelo.emit('disconnect', reason);
+            dreamix.emit('disconnect', reason);
         });
     };
 
-    pomelo.disconnect = function () {
+    dreamix.disconnect = function () {
         if (socket) {
             socket.disconnect();
             socket = null;
         }
     };
 
-    pomelo.request = function (route) {
+    dreamix.request = function (route) {
         if (!route) {
             return;
         }
@@ -395,11 +396,11 @@
         socket.send(msg);
     };
 
-    pomelo.notify = function (route, msg) {
+    dreamix.notify = function (route, msg) {
         this.request(route, msg);
     };
 
-    var processMessage = function (pomelo, msg) {
+    var processMessage = function (dreamix, msg) {
         var route;
         if (msg.id) {
             //if have a id then find the callback function with the request
@@ -427,25 +428,25 @@
                     if (!body) {
                         body = msg.body;
                     }
-                    pomelo.emit(route, body);
+                    dreamix.emit(route, body);
                 } else {
-                    pomelo.emit(route, msg);
+                    dreamix.emit(route, msg);
                 }
             } else {
-                pomelo.emit(msg.body.route, msg.body);
+                dreamix.emit(msg.body.route, msg.body);
             }
         }
     };
 
-    var processMessageBatch = function (pomelo, msgs) {
+    var processMessageBatch = function (dreamix, msgs) {
         for (var i = 0, l = msgs.length; i < l; i++) {
-            processMessage(pomelo, msgs[i]);
+            processMessage(dreamix, msgs[i]);
         }
     };
 
     function filter(msg, route) {
         if (route.indexOf('area.') === 0) {
-            msg.areaId = pomelo.areaId;
+            msg.areaId = dreamix.areaId;
         }
         if(route&&!msg.route){
             msg.route = route;
