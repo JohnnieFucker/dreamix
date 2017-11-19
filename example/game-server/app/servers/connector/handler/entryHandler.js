@@ -12,6 +12,17 @@ class Handler {
      * @param  {Function} next    next step callback
      */
     entry(msg, session, next) {         // eslint-disable-line
+        if (msg.uid) {
+            session.bind(msg.uid);
+            const userInfo = {
+                username: msg.username,
+                cid: msg.cid,
+                client_os: msg.client_os,
+                version: msg.version
+            };
+            session.updateUserInfo(userInfo);
+        }
+
         next(null, { code: 200, body: 'game server is ok.', id: msg.id, route: msg.route });
     }
 

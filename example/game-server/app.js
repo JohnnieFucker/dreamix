@@ -1,10 +1,16 @@
 const dreamix = require('../../index');
-
+const onlineUser = require('./app/modules/onlineUser');
 /**
  * Init app for client.
  */
 const app = dreamix.createApp();
 app.set('name', 'dreamixServer');
+
+app.configure('all', () => {
+    if (typeof app.registerAdmin === 'function') {
+        app.registerAdmin(onlineUser, { app: app, interval: 10});
+    }
+});
 
 // app configuration
 app.configure('all', 'connector', () => {
