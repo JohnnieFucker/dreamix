@@ -23,12 +23,10 @@ class Module {
             logger.error('not support connection: %j', agent.id);
             return;
         }
-        console.log('monitorHandler');
-        console.log(connectionService.getStatisticsInfo());
         agent.notify(moduleId, connectionService.getStatisticsInfo());
     }
 
-    masterHandler(agent, msg) {
+    masterHandler(agent, msg) {  // eslint-disable-line
         if (!msg) {
             // pull interval callback
             const list = agent.typeMap.connector;
@@ -46,11 +44,9 @@ class Module {
         }
 
         data[msg.serverId] = msg;
-        console.log('masterHandler');
-        console.log(data);
     }
 
-    clientHandler(agent, msg, cb) {
+    clientHandler(agent, msg, cb) {      // eslint-disable-line
         utils.invokeCallback(cb, null, agent.get(moduleId));
     }
 }
