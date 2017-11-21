@@ -15,7 +15,7 @@
         var host = "127.0.0.1";
         var port = "3010";
 
-        function show() {
+        function enter() {
             dreamix.init({
                 host: host,
                 port: port,
@@ -29,14 +29,24 @@
                     version:'1.0',
                     body: 'hello dreamix'
                 }, function (data) {
-                    alert(data.body);
+                    alert(JSON.stringify(data.body));
                 });
             });
+        }
+        function chat() {
+                dreamix.request("chat.chatHandler.chat", {
+                    uid:'uid123',
+                    chatBody: document.getElementById('txt').value
+                }, function (data) {
+                    alert(data.body);
+                });
         }
     </script>
 
 </head>
 <body>
-<input id="test" type="button" value="Test Game Server" onclick="show()"/>
+<input type="button" value="enter" onclick="enter()"/>
+<input type="text" id="txt"/>
+<input type="button" value="send chat" onclick="chat()"/>
 </body>
 </html>

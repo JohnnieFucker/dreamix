@@ -413,8 +413,9 @@
                 console.log('[pomeloclient.processMessage] cb is not a function for request ' + msg);
                 return;
             }
-
-            cb(msg);
+            if(msg.body){
+                cb(msg.body);
+            }
             return;
         }
 
