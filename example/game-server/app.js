@@ -1,6 +1,8 @@
 const dreamix = require('../../index');
 const onlineUser = require('./app/modules/onlineUser');
 const utils = require('./app/util/utils');
+const routeUtil = require('./app/util/routeUtil');
+
 /**
  * Init app for client.
  */
@@ -11,6 +13,10 @@ app.configure('all', () => {
     if (typeof app.registerAdmin === 'function') {
         app.registerAdmin(onlineUser, { app: app, interval: 5 * 60 });
     }
+    // connector server 的路由
+    app.route('connector', routeUtil.connector);
+    // chat server 的路由
+    app.route('chat', routeUtil.chat);
 });
 
 // app configuration
