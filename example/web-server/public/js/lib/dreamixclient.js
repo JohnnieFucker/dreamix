@@ -320,6 +320,7 @@
     var dreamix = Object.create(EventEmitter.prototype); // object extend from object
     root.dreamix = dreamix;
     var socket = null;
+    var id = 1;
     var callbacks = {};
 
     dreamix.init = function (params, cb) {
@@ -391,9 +392,10 @@
             cb = arguments[2];
         }
         msg = filter(msg, route);
-        callbacks[msg.id] = cb;
-        //var sg = Protocol.encode(id, route, msg);
-        socket.send(msg);
+        id++;
+        callbacks[id] = cb;
+        var sg = Protocol.encode(id,route,msg);
+        socket.send(sg);
     };
 
     dreamix.notify = function (route, msg) {
@@ -408,7 +410,7 @@
 
             delete callbacks[msg.id];
             if (typeof cb !== 'function') {
-                console.log('[pomeloclient.processMessage] cb is not a function for request ' + msg.id);
+                console.log('[pomeloclient.processMessage] cb is not a function for request ' + msg);
                 return;
             }
 

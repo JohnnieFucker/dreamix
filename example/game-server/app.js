@@ -1,5 +1,6 @@
 const dreamix = require('../../index');
 const onlineUser = require('./app/modules/onlineUser');
+const utils = require('./app/util/utils');
 /**
  * Init app for client.
  */
@@ -8,7 +9,7 @@ app.set('name', 'dreamixServer');
 
 app.configure('all', () => {
     if (typeof app.registerAdmin === 'function') {
-        app.registerAdmin(onlineUser, { app: app, interval: 10});
+        app.registerAdmin(onlineUser, { app: app, interval: 5 * 60 });
     }
 });
 
@@ -23,8 +24,16 @@ app.configure('all', 'connector', () => {
             closeTimeout: 60 * 1000,
             heartbeatTimeout: 60 * 1000,
             heartbeatInterval: 25 * 1000,
-            encodeMsg: false
+            decode: utils.connectorDecode
         });
+    app.set('proxyConfig', {
+        bufferMsg: true,
+        interval: 50
+    });
+    app.set('remoteConfig', {
+        bufferMsg: true,
+        interval: 50
+    });
     app.filter(dreamix.timeout());
 });
 

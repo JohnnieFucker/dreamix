@@ -22,7 +22,6 @@ class Handler {
             };
             session.updateUserInfo(userInfo);
         }
-
         next(null, { code: 200, body: 'game server is ok.', id: msg.id, route: msg.route });
     }
 
