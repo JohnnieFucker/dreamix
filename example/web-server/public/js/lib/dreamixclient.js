@@ -450,9 +450,6 @@
         if (route.indexOf('area.') === 0) {
             msg.areaId = dreamix.areaId;
         }
-        if(route&&!msg.route){
-            msg.route = route;
-        }
         msg.timestamp = Date.now();
         return msg;
     }
