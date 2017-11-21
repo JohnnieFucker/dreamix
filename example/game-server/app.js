@@ -45,6 +45,8 @@ app.configure('all', 'connector', () => {
 
 // 开启监控访问
 app.enable('systemMonitor');
+//app.enable('rpcDebugLog');
+
 
 // start app
 app.start(() => {
