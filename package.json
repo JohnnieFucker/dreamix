@@ -25,7 +25,7 @@
     "dreamix-loader": "^1.0.1",
     "dreamix-logger": "^1.0.0",
     "dreamix-protobuf": "^1.0.0",
-    "dreamix-rpc": "^1.0.2",
+    "dreamix-rpc": "^1.0.3",
     "dreamix-scheduler": "^1.0.0",
     "mkdirp": "^0.5.1",
     "mqtt": "^2.14.0",
