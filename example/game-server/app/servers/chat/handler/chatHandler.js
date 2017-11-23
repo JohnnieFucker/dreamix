@@ -12,7 +12,6 @@ class Handler {
      * @param  {Function} next    next step callback
      */
     chat(msg, session, next) {         // eslint-disable-line
-        console.log(msg);
         next(null, { code: 200, body: 'msg recived.', id: msg.id, route: msg.route });
     }
 }
