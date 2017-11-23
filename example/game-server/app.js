@@ -9,6 +9,10 @@ const routeUtil = require('./app/util/routeUtil');
 const app = dreamix.createApp();
 app.set('name', 'dreamixServer');
 
+// 开启监控访问
+app.enable('systemMonitor');
+//app.enable('rpcDebugLog');
+
 app.configure('all', () => {
     if (typeof app.registerAdmin === 'function') {
         app.registerAdmin(onlineUser, { app: app, interval: 5 * 60 });
@@ -42,11 +46,6 @@ app.configure('all', 'connector', () => {
     });
     app.filter(dreamix.timeout());
 });
-
-// 开启监控访问
-app.enable('systemMonitor');
-//app.enable('rpcDebugLog');
-
 
 // start app
 app.start(() => {
