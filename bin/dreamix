@@ -15,7 +15,7 @@ const starter = require('../lib/master/starter');
 const exec = require('child_process').exec;
 const spawn = require('child_process').spawn;
 const version = require('../package.json').version;
-const adminClient = require('dreamix-admin').adminClient;
+const AdminClient = require('dreamix-admin').adminClient;
 const constants = require('../lib/util/constants');
 const program = require('commander');
 
@@ -46,95 +46,15 @@ const MASTER_HA_NOT_FOUND = 'Fail to find an appropriate masterha config file, \
 const COMMAND_ERROR = 'Illegal command format. Use `dreamix --help` to get more info.\n'.red;
 const DAEMON_INFO = 'The application is running in the background now.\n';
 
-program.version(version);
-
-program.command('start')
-    .description('start the application')
-    .option('-e, --env <env>', 'the used environment', DEFAULT_ENV)
-    .option('-D, --daemon', 'enable the daemon start')
-    .option('-d, --directory, <directory>', 'the code directory', DEFAULT_GAME_SERVER_DIR)
-    .option('-t, --type <server-type>,', 'start server type')
-    .option('-i, --id <server-id>', 'start server id')
-    .action((opts) => {
-        start(opts);
-    });
-
-program.command('list')
-    .description('list the servers')
-    .option('-u, --username <username>', 'administration user name', DEFAULT_USERNAME)
-    .option('-p, --password <password>', 'administration password', DEFAULT_PWD)
-    .option('-h, --host <master-host>', 'master server host', DEFAULT_MASTER_HOST)
-    .option('-P, --port <master-port>', 'master server port', DEFAULT_MASTER_PORT)
-    .action((opts) => {
-        list(opts);
-    });
-
-program.command('add')
-    .description('add a new server')
-    .option('-u, --username <username>', 'administration user name', DEFAULT_USERNAME)
-    .option('-p, --password <password>', 'administration password', DEFAULT_PWD)
-    .option('-h, --host <master-host>', 'master server host', DEFAULT_MASTER_HOST)
-    .option('-P, --port <master-port>', 'master server port', DEFAULT_MASTER_PORT)
-    .action(function () {
-        const args = [].slice.call(arguments, 0);
-        const opts = args[args.length - 1];
-        opts.args = args.slice(0, -1);
-        add(opts);
-    });
-
-program.command('stop')
-    .description('stop the servers, for multiple servers, use `dreamix stop server-id-1 server-id-2`')
-    .option('-u, --username <username>', 'administration user name', DEFAULT_USERNAME)
-    .option('-p, --password <password>', 'administration password', DEFAULT_PWD)
-    .option('-h, --host <master-host>', 'master server host', DEFAULT_MASTER_HOST)
-    .option('-P, --port <master-port>', 'master server port', DEFAULT_MASTER_PORT)
-    .action(function () {
-        const args = [].slice.call(arguments, 0);
-        const opts = args[args.length - 1];
-        opts.serverIds = args.slice(0, -1);
-        terminal('stop', opts);
-    });
-
-program.command('kill')
-    .description('kill the application')
-    .option('-u, --username <username>', 'administration user name', DEFAULT_USERNAME)
-    .option('-p, --password <password>', 'administration password', DEFAULT_PWD)
-    .option('-h, --host <master-host>', 'master server host', DEFAULT_MASTER_HOST)
-    .option('-P, --port <master-port>', 'master server port', DEFAULT_MASTER_PORT)
-    .option('-f, --force', 'using this option would kill all the node processes')
-    .action(function () {
-        const args = [].slice.call(arguments, 0);
-        const opts = args[args.length - 1];
-        opts.serverIds = args.slice(0, -1);
-        terminal('kill', opts);
-    });
-
-program.command('restart')
-    .description('restart the servers, for multiple servers, use `dreamix restart server-id-1 server-id-2`')
-    .option('-u, --username <username>', 'administration user name', DEFAULT_USERNAME)
-    .option('-p, --password <password>', 'administration password', DEFAULT_PWD)
-    .option('-h, --host <master-host>', 'master server host', DEFAULT_MASTER_HOST)
-    .option('-P, --port <master-port>', 'master server port', DEFAULT_MASTER_PORT)
-    .option('-t, --type <server-type>,', 'start server type')
-    .option('-i, --id <server-id>', 'start server id')
-    .action((opts) => {
-        restart(opts);
-    });
-
-program.command('masterha')
-    .description('start all the slaves of the master')
-    .option('-d, --directory <directory>', 'the code directory', DEFAULT_GAME_SERVER_DIR)
-    .action((opts) => {
-        startMasterha(opts);
-    });
-
-program.command('*')
-    .action(() => {
-        console.log(COMMAND_ERROR);
-    });
-
-program.parse(process.argv);
-
+/**
+ * Exit with the given `str`.
+ *
+ * @param {String} str
+ */
+function abort(str) {
+    console.error(str);
+    process.exit(1);
+}
 
 /**
  * Start application.
@@ -174,6 +94,18 @@ function start(opts) {
     }
 }
 
+function connectToMaster(id, opts, cb) {
+    const client = new AdminClient({ username: opts.username, password: opts.password, md5: true });
+    client.connect(id, opts.host, opts.port, (err) => {
+        if (err) {
+            abort(CONNECT_ERROR + err.red);
+        }
+        if (typeof cb === 'function') {
+            cb(client);
+        }
+    });
+}
+
 /**
  * List dreamix processes.
  *
@@ -192,7 +124,7 @@ function list(opts) {
                     servers.push(data.msg[key]);
                 }
             }
-            const comparer = function (a, b) {
+            const comparer = (a, b) => {
                 if (a.serverType < b.serverType) {
                     return -1;
                 } else if (a.serverType > b.serverType) {
@@ -297,17 +229,35 @@ function restart(opts) {
     });
 }
 
-function connectToMaster(id, opts, cb) {
-    const client = new adminClient({ username: opts.username, password: opts.password, md5: true });
-    client.connect(id, opts.host, opts.port, (err) => {
-        if (err) {
-            abort(CONNECT_ERROR + err.red);
+/**
+ * Run server.
+ *
+ * @param {Object} server server information
+ */
+function runServer(server) {
+    let cmd;
+    const main = path.resolve(server.home, 'app.js');
+    if (utils.isLocal(server.host)) {
+        const options = [];
+        options.push(main);
+        for (const key in server) {
+            if (server.hasOwnProperty(key)) {
+                options.push(util.format('%s=%s', key, server[key]));
+            }
         }
-        if (typeof cb === 'function') {
-            cb(client);
+        starter.localrun(process.execPath, null, options);
+    } else {
+        cmd = util.format('cd "%s" && "%s"', server.home, process.execPath);
+        cmd += util.format(' "%s" ', main);
+        for (const key in server) {
+            if (server.hasOwnProperty(key)) {
+                cmd += util.format(' %s=%s ', key, server[key]);
+            }
         }
-    });
+        starter.sshrun(cmd, server.host);
+    }
 }
+
 
 /**
  * Start master slaves.
@@ -319,7 +269,7 @@ function startMasterha(opts) {
     if (!fs.existsSync(configFile)) {
         abort(MASTER_HA_NOT_FOUND);
     }
-    const masterha = require(configFile).masterha;
+    const masterha = require(configFile).masterha; // eslint-disable-line
     for (let i = 0; i < masterha.length; i++) {
         const server = masterha[i];
         server.mode = constants.RESERVED.STAND_ALONE;
@@ -335,24 +285,12 @@ function startMasterha(opts) {
  * @param {String} path
  * @param {Function} fn
  */
-function emptyDirectory(path, fn) {
+function emptyDirectory(path, fn) {         // eslint-disable-line
     fs.readdir(path, (err, files) => {
         if (err && err.code !== 'ENOENT') {
             abort(FILEREAD_ERROR);
         }
         fn(!files || !files.length);
-    });
-}
-
-/**
- * Prompt confirmation with the given `msg`.
- *
- * @param {String} msg
- * @param {Function} fn
- */
-function confirm(msg, fn) {
-    prompt(msg, (val) => {
-        fn(/^ *y(es)?/i.test(val));
     });
 }
 
@@ -374,14 +312,35 @@ function prompt(msg, fn) {
     }).resume();
 }
 
+
 /**
- * Exit with the given `str`.
+ * Prompt confirmation with the given `msg`.
  *
- * @param {String} str
+ * @param {String} msg
+ * @param {Function} fn
  */
-function abort(str) {
-    console.error(str);
-    process.exit(1);
+function confirm(msg, fn) {
+    prompt(msg, (val) => {
+        fn(/^ *y(es)?/i.test(val));
+    });
+}
+
+/**
+ * Mkdir -p.
+ *
+ * @param {String} _path
+ * @param {Function} fn
+ */
+function mkdir(_path, fn) {
+    mkdirp(_path, {mode: 755}, function (err) {  // eslint-disable-line
+        if (err) {
+            throw err;
+        }
+        console.log('   create : '.green + _path);
+        if (typeof fn === 'function') {
+            fn();
+        }
+    });
 }
 
 /**
@@ -415,23 +374,6 @@ function copy(origin, target) {
     });
 }
 
-/**
- * Mkdir -p.
- *
- * @param {String} _path
- * @param {Function} fn
- */
-function mkdir(_path, fn) {
-    mkdirp(_path, {mode: 755}, function (err) {  // eslint-disable-line
-        if (err) {
-            throw err;
-        }
-        console.log('   create : '.green + _path);
-        if (typeof fn === 'function') {
-            fn();
-        }
-    });
-}
 
 /**
  * Get user's choice on connector selecting
@@ -460,31 +402,89 @@ function connectorType(cb) {
     });
 }
 
-/**
- * Run server.
- *
- * @param {Object} server server information
- */
-function runServer(server) {
-    let cmd;
-    const main = path.resolve(server.home, 'app.js');
-    if (utils.isLocal(server.host)) {
-        const options = [];
-        options.push(main);
-        for (const key in server) {
-            if (server.hasOwnProperty(key)) {
-                options.push(util.format('%s=%s', key, server[key]));
-            }
-        }
-        starter.localrun(process.execPath, null, options);
-    } else {
-        cmd = util.format('cd "%s" && "%s"', server.home, process.execPath);
-        cmd += util.format(' "%s" ', main);
-        for (const key in server) {
-            if (server.hasOwnProperty(key)) {
-                cmd += util.format(' %s=%s ', key, server[key]);
-            }
-        }
-        starter.sshrun(cmd, server.host);
-    }
-}
+program.version(version);
+
+program.command('start')
+    .description('start the application')
+    .option('-e, --env <env>', 'the used environment', DEFAULT_ENV)
+    .option('-D, --daemon', 'enable the daemon start')
+    .option('-d, --directory, <directory>', 'the code directory', DEFAULT_GAME_SERVER_DIR)
+    .option('-t, --type <server-type>,', 'start server type')
+    .option('-i, --id <server-id>', 'start server id')
+    .action((opts) => {
+        start(opts);
+    });
+
+program.command('list')
+    .description('list the servers')
+    .option('-u, --username <username>', 'administration user name', DEFAULT_USERNAME)
+    .option('-p, --password <password>', 'administration password', DEFAULT_PWD)
+    .option('-h, --host <master-host>', 'master server host', DEFAULT_MASTER_HOST)
+    .option('-P, --port <master-port>', 'master server port', DEFAULT_MASTER_PORT)
+    .action((opts) => {
+        list(opts);
+    });
+
+program.command('add')
+    .description('add a new server')
+    .option('-u, --username <username>', 'administration user name', DEFAULT_USERNAME)
+    .option('-p, --password <password>', 'administration password', DEFAULT_PWD)
+    .option('-h, --host <master-host>', 'master server host', DEFAULT_MASTER_HOST)
+    .option('-P, --port <master-port>', 'master server port', DEFAULT_MASTER_PORT)
+    .action((...args) => {
+        const opts = args[args.length - 1];
+        opts.args = args.slice(0, -1);
+        add(opts);
+    });
+
+program.command('stop')
+    .description('stop the servers, for multiple servers, use `dreamix stop server-id-1 server-id-2`')
+    .option('-u, --username <username>', 'administration user name', DEFAULT_USERNAME)
+    .option('-p, --password <password>', 'administration password', DEFAULT_PWD)
+    .option('-h, --host <master-host>', 'master server host', DEFAULT_MASTER_HOST)
+    .option('-P, --port <master-port>', 'master server port', DEFAULT_MASTER_PORT)
+    .action((...args) => {
+        const opts = args[args.length - 1];
+        opts.serverIds = args.slice(0, -1);
+        terminal('stop', opts);
+    });
+
+program.command('kill')
+    .description('kill the application')
+    .option('-u, --username <username>', 'administration user name', DEFAULT_USERNAME)
+    .option('-p, --password <password>', 'administration password', DEFAULT_PWD)
+    .option('-h, --host <master-host>', 'master server host', DEFAULT_MASTER_HOST)
+    .option('-P, --port <master-port>', 'master server port', DEFAULT_MASTER_PORT)
+    .option('-f, --force', 'using this option would kill all the node processes')
+    .action((...args) => {
+        const opts = args[args.length - 1];
+        opts.serverIds = args.slice(0, -1);
+        terminal('kill', opts);
+    });
+
+program.command('restart')
+    .description('restart the servers, for multiple servers, use `dreamix restart server-id-1 server-id-2`')
+    .option('-u, --username <username>', 'administration user name', DEFAULT_USERNAME)
+    .option('-p, --password <password>', 'administration password', DEFAULT_PWD)
+    .option('-h, --host <master-host>', 'master server host', DEFAULT_MASTER_HOST)
+    .option('-P, --port <master-port>', 'master server port', DEFAULT_MASTER_PORT)
+    .option('-t, --type <server-type>,', 'start server type')
+    .option('-i, --id <server-id>', 'start server id')
+    .action((opts) => {
+        restart(opts);
+    });
+
+program.command('masterha')
+    .description('start all the slaves of the master')
+    .option('-d, --directory <directory>', 'the code directory', DEFAULT_GAME_SERVER_DIR)
+    .action((opts) => {
+        startMasterha(opts);
+    });
+
+program.command('*')
+    .action(() => {
+        console.log(COMMAND_ERROR);
+    });
+
+program.parse(process.argv);
+
