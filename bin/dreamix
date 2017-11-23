@@ -31,7 +31,7 @@ const CUR_DIR = process.cwd();
 const DEFAULT_GAME_SERVER_DIR = CUR_DIR;
 const DEFAULT_USERNAME = 'admin';
 const DEFAULT_PWD = 'admin';
-const DEFAULT_ENV = 'development';
+const DEFAULT_ENV = 'production';
 const DEFAULT_MASTER_HOST = '127.0.0.1';
 const DEFAULT_MASTER_PORT = 3005;
 
