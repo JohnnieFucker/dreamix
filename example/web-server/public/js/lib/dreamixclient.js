@@ -336,7 +336,7 @@
 
         socket = io(url, {'force new connection': true, reconnect: true});
         socket.on('connect', function () {
-            console.log('[pomeloclient.init] websocket connected!');
+            console.log('[dreamixclient.init] websocket connected!');
             if (cb) {
                 cb(socket);
             }
@@ -410,7 +410,7 @@
 
             delete callbacks[msg.id];
             if (typeof cb !== 'function') {
-                console.log('[pomeloclient.processMessage] cb is not a function for request ' + msg);
+                console.log('[dreamixclient.processMessage] cb is not a function for request ' + msg);
                 return;
             }
             if(msg.body){
