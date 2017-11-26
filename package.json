@@ -1,11 +1,14 @@
 {
   "name": "dreamix",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "description": "dreamix",
   "main": "index.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/JohnnieFucker/dreamix.git"
+  },
+  "bin":{
+    "dreamix":"./bin/dreamix"
   },
   "keywords": [
     "dreamix"
