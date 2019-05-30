@@ -7,8 +7,8 @@
     "type": "git",
     "url": "git+https://github.com/JohnnieFucker/dreamix.git"
   },
-  "bin":{
-    "dreamix":"./bin/dreamix"
+  "bin": {
+    "dreamix": "./bin/dreamix"
   },
   "keywords": [
     "dreamix"
@@ -28,14 +28,14 @@
     "dreamix-loader": "^1.0.2",
     "dreamix-logger": "^1.0.0",
     "dreamix-protobuf": "^1.0.0",
+    "dreamix-protocol": "^1.0.0",
     "dreamix-rpc": "^1.0.8",
     "dreamix-scheduler": "^1.0.0",
     "mkdirp": "^0.5.1",
     "mqtt": "^2.14.0",
     "node-bignumber": "^v1.2.1",
-    "dreamix-protocol": "^1.0.0",
     "seq-queue": "^0.0.5",
-    "socket.io": "^2.0.4",
+    "socket.io": "^2.2.0",
     "ws": "^3.3.1"
   }
 }
