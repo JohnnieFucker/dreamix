@@ -1,6 +1,6 @@
 {
   "name": "dreamix",
-  "version": "1.0.16",
+  "version": "1.0.17",
   "description": "dreamix",
   "main": "index.js",
   "repository": {
@@ -24,7 +24,7 @@
     "cliff": "^0.1.10",
     "commander": "^2.20.0",
     "crc": "^3.8.0",
-    "dreamix-admin": "^1.0.9",
+    "dreamix-admin": "^1.0.10",
     "dreamix-loader": "^1.0.3",
     "dreamix-logger": "^1.0.1",
     "dreamix-protobuf": "^1.0.0",
