@@ -69,7 +69,7 @@ function start(opts) {
 
     const logDir = path.resolve(opts.directory, 'logs');
     if (!fs.existsSync(logDir)) {
-        fs.mkdir(logDir);
+        fs.mkdirSync(logDir);
     }
 
     let ls;
