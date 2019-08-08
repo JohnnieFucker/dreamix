@@ -15,7 +15,7 @@ app.enable('systemMonitor');
 
 app.configure('all', () => {
     if (typeof app.registerAdmin === 'function') {
-        app.registerAdmin(onlineUser, { app: app, interval: 5 * 60 });
+        app.registerAdmin(onlineUser, {app: app, interval: 5 * 60});
     }
     // connector server 的路由
     app.route('connector', routeUtil.connector);
@@ -25,17 +25,26 @@ app.configure('all', () => {
 
 // app configuration
 app.configure('all', 'connector', () => {
+    // app.set('connectorConfig',
+    //     {
+    //         connector: dreamix.connectors.sioconnector,
+    //         // 'websocket', 'polling-xhr', 'polling-jsonp', 'polling'
+    //         transports: ['websocket', 'polling-xhr', 'polling-jsonp', 'polling'],
+    //         heartbeats: true,
+    //         closeTimeout: 60 * 1000,
+    //         heartbeatTimeout: 60 * 1000,
+    //         heartbeatInterval: 25 * 1000,
+    //         decode: utils.connectorDecode
+    //     });
+
     app.set('connectorConfig',
         {
-            connector: dreamix.connectors.sioconnector,
-            // 'websocket', 'polling-xhr', 'polling-jsonp', 'polling'
-            transports: ['websocket', 'polling-xhr', 'polling-jsonp', 'polling'],
-            heartbeats: true,
-            closeTimeout: 60 * 1000,
-            heartbeatTimeout: 60 * 1000,
-            heartbeatInterval: 25 * 1000,
-            decode: utils.connectorDecode
+            connector: dreamix.connectors.hybridconnector,
+            heartbeat: 10,
+            useDict: false,
+            useProtobuf: false,
         });
+
     app.set('proxyConfig', {
         bufferMsg: true,
         interval: 50
