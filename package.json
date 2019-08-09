@@ -1,6 +1,6 @@
 {
   "name": "dreamix",
-  "version": "1.0.19",
+  "version": "1.0.20",
   "description": "dreamix",
   "main": "index.js",
   "repository": {
@@ -29,7 +29,7 @@
     "dreamix-logger": "^1.0.1",
     "dreamix-protobuf": "^1.0.0",
     "dreamix-protocol": "^1.0.0",
-    "dreamix-rpc": "^1.0.9",
+    "dreamix-rpc": "^1.0.10",
     "dreamix-scheduler": "^1.0.1",
     "mkdirp": "^0.5.1",
     "mqtt": "^3.0.0",
